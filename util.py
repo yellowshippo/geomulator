@@ -13,8 +13,3 @@ class DifferentialLabel(str):
         list_dl = self.to_list()
         list_dl[index] += 1
         return DifferentialLabel(list_dl)
-
-
-# dl = DifferentialLabel([3, 4, 1, 0])
-# print(dl)
-# print(dl.increase(3))

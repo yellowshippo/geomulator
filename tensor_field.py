@@ -5,25 +5,19 @@ from util import DifferentialLabel as DL
 
 class TensorField(np.ndarray):
 
-    def __new__(cls, value, *, param=None):
+    def __new__(cls, value, param):
         """Create a new TensorField object.
 
         Args:
             value: Ndarray of field's value.
             param: Ndarray of meshgrids. Each meshgrid represents a space of
                 the parameter used to generate the tensor field. In case of
-                surface(u, v), param = [u, v]. If not fed, value[-2:] is
-                assumed to be the param.
+                surface(u, v), param = [u, v].
         Return:
             TensorField object.
         """
-        if param is None:
-            param = value[-2:]
-            _value = value[:-2]
-        else:
-            _value = value
-        obj = np.asarray(_value).view(cls)
-        obj.param = param
+        obj = np.atleast_2d(value).view(cls)
+        obj.param = np.atleast_2d(param)
         obj.dof = len(obj.param)
         obj.derivatives = {0: {DL([0] * obj.dof): obj}}
 
@@ -57,7 +51,7 @@ class TensorField(np.ndarray):
         self.derivatives.update({order: nth_derivatives})
         return nth_derivatives
 
-    def calulate_derivative(self, order, label):
+    def calculate_derivative(self, order, label):
         """Obtain information of derivative.
 
         Args:
@@ -84,13 +78,15 @@ class TensorField(np.ndarray):
                 Corresponding to the index of param.
         """
         def __partial_differentiate(f, var):
-            return np.array([[np.gradient(__f, _var)
-                              for __f, _var in zip(_f, var)]
-                             for _f in f])
+            if len(var.shape) == 1:
+                return np.array([np.gradient(_f, var) for _f in f])
+            else:
+                return np.array([__partial_differentiate(_f, _var)
+                                 for _f, _var in zip(f, var)])
 
         var = self.param[diff_axis]
         # Check if the order is column- or row- oriented
-        if np.allclose(var[0], var[0, 0]):
+        if len(var.shape) > 1 and np.allclose(var[0], var[0, 0]):
             axis_to_swap = (diff_axis + 1) % self.dof
             inverse_axes_to_swap = np.array([diff_axis, axis_to_swap]) \
                 - self.dof
