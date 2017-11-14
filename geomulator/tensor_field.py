@@ -22,6 +22,7 @@ class TensorField(np.ndarray):
         obj.param = np.atleast_2d(param)
         obj.dof = len(obj.param)
         obj.derivatives = {0: {DL([0] * obj.dof): obj}}
+        obj.attributes = {}
 
         return obj
 

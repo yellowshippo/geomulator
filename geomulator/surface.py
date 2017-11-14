@@ -1,9 +1,11 @@
 import numpy as np
 
-from .tensor_field import TensorField
+from .fields import ScalarField
+from .fields import VectorField
+from .fields import MatrixField
 
 
-class Surface(TensorField):
+class Surface(VectorField):
 
     @classmethod
     def generate_surface(cls, func, *,
@@ -50,7 +52,7 @@ class Surface(TensorField):
             [np.einsum('ijk,ijk->jk', del_x_v, del_x_u),
              np.einsum('ijk,ijk->jk', del_x_v, del_x_v)]])
 
-        g_field = TensorField(g, param=self.param)
+        g_field = MatrixField(g, param=self.param)
         self.attributes['metric'] = g_field
         return g_field
 
@@ -63,19 +65,19 @@ class Surface(TensorField):
         """
         if 'hessian' in self.attributes:
             return self.attributes['hessian']
-        normals = self.calculate_normals()
+        normal = self.calculate_normal()
 
         diff2 = self.differentiate(order=2)
         del2_x_uu = diff2['2-0']
         del2_x_uv = diff2['1-1']
         del2_x_vv = diff2['0-2']
         h = np.array([
-            [np.einsum('ijk,ijk->jk', del2_x_uu, normals),
-             np.einsum('ijk,ijk->jk', del2_x_uv, normals)],
-            [np.einsum('ijk,ijk->jk', del2_x_uv, normals),
-             np.einsum('ijk,ijk->jk', del2_x_vv, normals)]])
+            [np.einsum('ijk,ijk->jk', del2_x_uu, normal),
+             np.einsum('ijk,ijk->jk', del2_x_uv, normal)],
+            [np.einsum('ijk,ijk->jk', del2_x_uv, normal),
+             np.einsum('ijk,ijk->jk', del2_x_vv, normal)]])
 
-        h_field = TensorField(h, param=self.param)
+        h_field = MatrixField(h, param=self.param)
         self.attributes['hessian'] = h_field
         return h_field
 
@@ -85,22 +87,22 @@ class Surface(TensorField):
         Return:
             TensorField object of the Gauss curvature.
         """
-        det_h = np.linalg.det(self.calculate_hessian().transpose())
-        det_g = np.linalg.det(self.calculate_metric().transpose())
-        return TensorField(det_h / det_g, param=self.param)
+        det_h = self.calculate_hessian().calculate_determinant()
+        det_g = self.calculate_metric().calculate_determinant()
+        return ScalarField(det_h / det_g, param=self.param)
 
-    def calculate_normals(self):
+    def calculate_normal(self):
         """Calculate normal vector field.
 
         Return:
-            TensorField object of the normal vector field.
+            VectorField object of the normal vector field.
         """
-        if 'normals' in self.attributes:
-            return self.attributes['normals']
+        if 'normal' in self.attributes:
+            return self.attributes['normal']
         crosses = np.cross(self.calculate_derivative(order=1, label='1-0'),
                            self.calculate_derivative(order=1, label='0-1'),
                            axis=0)
-        normals = TensorField(crosses / np.linalg.norm(crosses, axis=0),
-                              param=self.param)
-        self.attributes['normals'] = normals
-        return normals
+        normal = VectorField(crosses / np.linalg.norm(crosses, axis=0),
+                             param=self.param)
+        self.attributes['normal'] = normal
+        return normal
