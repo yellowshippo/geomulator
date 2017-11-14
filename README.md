@@ -6,6 +6,7 @@ Simulator for differential geometry.
 - Metric tensor (surface only)
 - Hessian (surface only)
 - Gauss curvature (surface only)
+![Surface image](https://github.com/yellowshippo/geomulator/blob/master/figs/surface.png)
 
 # Usage
 ## Basics
