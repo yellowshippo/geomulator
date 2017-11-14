@@ -25,6 +25,64 @@ class TensorField(np.ndarray):
 
         return obj
 
+    def access_value_with_param(self, param):
+        """Access value corresponding to the specified param.
+
+        Args:
+            param: 1-D ndarray to specify the parameter.
+        Return:
+            ndattay of one tensor at the param.
+        """
+        index = self.find_index_at(param)
+        return self.access_value_with_param_index(index)
+
+    def find_index_at(self, param):
+        """Find index corresponding to the input param.
+
+        Args:
+            param: 1-D ndarray to specify the parameter.
+        Return:
+            1-D ndarray containing index.
+        """
+        axis_slice = list(range(len(self.param.shape)))
+        if len(axis_slice) > 2:  # Treat incoherence of axes of meshgrid...
+            axis_slice[0] = 1
+            axis_slice[1] = 0
+        linspaces = [np.swapaxes(var, ax, -1)[tuple(
+            np.zeros(self.dof - 1, int))]
+                     for ax, var in zip(axis_slice, self.param)]
+        indices = np.array([np.argmin(np.abs(ls - p))
+                            for ls, p in zip(linspaces, param)])
+        if len(axis_slice) > 2:
+            indices[0], indices[1] = indices[1], indices[0]
+        return indices
+
+    def access_value_with_param_index(self, index):
+        """Access value corresponding to the specified param.
+
+        Args:
+            index: 1-D ndarray of indices of parameters with length = dof.
+        Return:
+            ndattay of one tensor at the param.
+        """
+        return self.transpose()[tuple(index)]
+
+    def transpose(self):
+        """Transpose value from [rank0, rank1, ..., param0, param1, ...] shape
+        to [param0, param1, ..., rank0, rank1, ...] shape.
+
+        Return:
+            ndarray of the transposed value. Note that this is not TensorField
+            object.
+        """
+        data = self
+        data_axes = len(data.shape)
+        for i_param in range(self.dof):
+            for i_value in range(data_axes, 0, -1):
+                axis = i_value - self.dof + i_param
+                data = np.swapaxes(data, axis, axis - 1)
+        return data
+
     def differentiate(self, order=1):
         """Calculate derivatives of n-th order. Results are stored in the
         parent object's derivatives attribute and also returned.
@@ -42,7 +100,7 @@ class TensorField(np.ndarray):
         if not order - 1 in self.derivatives:
             self.differentiate(order - 1)
 
-        print(f"Calculating {order}-th derivative")
+        print(f"Calculating {order}-derivative")
         nth_derivatives = {}
         for i_axis in range(self.dof):
             for k, v in self.derivatives[order - 1].items():
@@ -65,12 +123,6 @@ class TensorField(np.ndarray):
         if order not in self.derivatives:
             self.differentiate(order)
         return self.derivatives[order][label]
-
-    def calculate_metric(self):
-        pass
-
-    def calculate_hessian(self):
-        pass
 
     def _partial_differentiate(self, diff_axis=0):
         """Calculate partial differential of f along with u or v.

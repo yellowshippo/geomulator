@@ -7,7 +7,28 @@ from tensor_field import TensorField
 
 class TestTensorField(unittest.TestCase):
 
-    # Surfaces: vector(u, v)
+    def test_find_index_at(self):
+        u, v = np.meshgrid(np.linspace(-5, 5, 1001), np.linspace(-2, 3, 501))
+        plane = TensorField(
+            [u, v, u + v],
+            param=[u, v])
+        indices = plane.find_index_at([1.231, -1.469])
+        np.testing.assert_array_equal(indices, [53, 623])
+
+    def test_access_value_with_param(self):
+        u, v = np.meshgrid(np.linspace(-5, 5, 1001), np.linspace(-2, 3, 501))
+        matrix_field = TensorField(
+            [[u, u], [v, v]], param=[u, v])
+        actual = matrix_field.access_value_with_param([1.23, -1.47])
+        np.testing.assert_almost_equal(actual, [[1.23, 1.23], [-1.47, -1.47]])
+
+    def test_access_value_with_param_index(self):
+        u, v = np.meshgrid(np.linspace(-5, 5, 1001), np.linspace(-2, 3, 501))
+        matrix_field = TensorField(
+            [[u, u], [v, v]], param=[u, v])
+        indices = matrix_field.find_index_at([1.23, -1.47])
+        actual = matrix_field.access_value_with_param_index(indices)
+        np.testing.assert_almost_equal(actual, [[1.23, 1.23], [-1.47, -1.47]])
 
     def test_differential_line(self):
         s = np.linspace(-2, 2, 401)
