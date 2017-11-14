@@ -16,6 +16,18 @@ class TestFields(unittest.TestCase):
         with self.assertRaises(ValueError):
             ScalarField([[u, v], [u, v]], param=[u, v])
 
+    def test_scalar_differentiate(self):
+        ls = np.linspace(-.5, .5, 101)
+        u, v = np.meshgrid(ls, ls)
+        sf = ScalarField([u + u * v**2], param=[u, v])
+
+        del_u = sf.calculate_derivative(order=1, label='1-0')
+        np.testing.assert_almost_equal(del_u, 1 + v**2)
+
+        del_v = sf.calculate_derivative(order=1, label='0-1')
+        np.testing.assert_almost_equal(
+            del_v[1:-1, 1:-1], (u * 2 * v)[1:-1, 1:-1])
+
     def test_scalar_gradient(self):
         ls = np.linspace(-.5, .5, 101)
         u, v, w = np.meshgrid(ls, ls, ls)
@@ -41,7 +53,7 @@ class TestFields(unittest.TestCase):
         vf = VectorField([u * 3, v + 2, u * v**2], param=[u, v])
         norm = vf.calculate_norm()
         np.testing.assert_almost_equal(
-            norm[0], np.sqrt(u**2 * 9 + (v + 2)**2 + u**2 * v**4))
+            norm, np.sqrt(u**2 * 9 + (v + 2)**2 + u**2 * v**4))
 
     def test_matrix_not_rank2(self):
         """ValueError should be raised when the value is not rank 2 tensor."""
@@ -58,4 +70,4 @@ class TestFields(unittest.TestCase):
         desired_det = np.array(
             [[np.linalg.det(m__) for m__ in m_]
              for m_ in np.transpose(mf, [2, 3, 0, 1])])
-        np.testing.assert_almost_equal(det[0], desired_det)
+        np.testing.assert_almost_equal(det, desired_det)

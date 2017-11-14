@@ -6,15 +6,13 @@ from .tensor_field import TensorField
 class ScalarField(TensorField):
 
     def __new__(cls, value, param):
-        v = np.asarray(value)
-        rank = len(v.shape) - len(np.asarray(param).shape) + 1
-        if rank > 1 and v.shape[0] != 1:
+        obj = super().__new__(cls, value, param)
+        rank = len(obj.shape) - len(obj.param.shape) + 1
+        if rank > 1:
             raise ValueError(
-                f"Value is not scalar but shape of {v.shape[:rank]}")
-        elif rank == 0:
-            obj = super().__new__(cls, [value], param)
-        else:
-            obj = super().__new__(cls, value, param)
+                f"Value is not scalar but rank {rank}")
+        elif rank == 1:
+            obj = super().__new__(cls, value[0], param)
         return obj
 
     def calculate_gradient(self):
@@ -27,7 +25,7 @@ class ScalarField(TensorField):
             return self.attributes['gradient']
         diff1 = self.differentiate(order=1)
         grad = VectorField(
-            np.concatenate([d for i, d in enumerate(diff1.values())]),
+            np.concatenate([[d] for i, d in enumerate(diff1.values())]),
             param=self.param)
         self.attributes['gradient'] = grad
         return grad
@@ -70,5 +68,4 @@ class MatrixField(TensorField):
             return self.attributes['determinant']
         det = ScalarField(np.linalg.det(self.transpose()), param=self.param)
         self.attributes['determinant'] = det
-        print(det.shape)
         return det
