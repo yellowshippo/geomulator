@@ -127,3 +127,16 @@ class TestTensorField(unittest.TestCase):
         np.testing.assert_almost_equal(
             del_v[1, 0, 1:-1, 1:-1], (u * 2 * v)[1:-1, 1:-1])
         np.testing.assert_almost_equal(del_v[1, 1], 1.)
+
+    def test_transpose_2d(self):
+        u, v = np.meshgrid(
+            np.linspace(0., 1., 11), np.linspace(0., 2., 21))
+        tf = TensorField([u, v], param=[u, v])
+        np.testing.assert_array_equal(tf.transpose().shape, [21, 11, 2])
+
+    def test_transpose_3d(self):
+        u, v, w = np.meshgrid(
+            np.linspace(0., 1., 11), np.linspace(0., 2., 21),
+            np.linspace(0., 3., 31))
+        tf = TensorField([u, v, w], param=[u, v, w])
+        np.testing.assert_array_equal(tf.transpose().shape, [21, 11, 31, 3])

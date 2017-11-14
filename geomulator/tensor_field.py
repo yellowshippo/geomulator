@@ -81,6 +81,8 @@ class TensorField(np.ndarray):
         for i_param in range(self.dof):
             for i_value in range(data_axes, 0, -1):
                 axis = i_value - self.dof + i_param
+                if axis < 1 + i_param:
+                    continue
                 data = np.swapaxes(data, axis, axis - 1)
         return data
 
