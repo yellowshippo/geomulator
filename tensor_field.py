@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 from util import DifferentialLabel as DL
@@ -77,24 +79,38 @@ class TensorField(np.ndarray):
             diff_axis: int to specify along which axis to differentiate.
                 Corresponding to the index of param.
         """
-        def __partial_differentiate(f, var):
-            if len(var.shape) == 1:
-                return np.array([np.gradient(_f, var) for _f in f])
-            else:
-                return np.array([__partial_differentiate(_f, _var)
-                                 for _f, _var in zip(f, var)])
 
         var = self.param[diff_axis]
-        # Check if the order is column- or row- oriented
-        if len(var.shape) > 1 and np.allclose(var[0], var[0, 0]):
-            axis_to_swap = (diff_axis + 1) % self.dof
-            inverse_axes_to_swap = np.array([diff_axis, axis_to_swap]) \
-                - self.dof
-            results = np.swapaxes(
-                __partial_differentiate(
-                    np.swapaxes(self, *inverse_axes_to_swap),
-                    np.swapaxes(var, diff_axis, axis_to_swap)),
-                *inverse_axes_to_swap)
-        else:
-            results = __partial_differentiate(self, var)
+        value_shape = self.shape[:-self.dof]
+        elems = [list(range(s)) for s in value_shape]
+        indices = list(itertools.product(*elems))
+
+        results = np.zeros(self.shape)
+        for index in indices:
+            results[index] = self.__partial_differentiate(
+                self[index], var, diff_axis)
+
         return TensorField(results, param=self.param)
+
+    def __partial_differentiate(self, f, var, diff_axis):
+        if len(var.shape) == 1:
+            return np.gradient(f, var)
+        else:
+            # Choose good axis to perform differentiation
+            axis_to_swap = diff_axis
+            index_increment = 0
+            dof = len(var.shape)
+
+            swapped_var = np.swapaxes(var, diff_axis, axis_to_swap)
+            while np.allclose(swapped_var[0], swapped_var[0, 0]):
+                index_increment += 1
+                axis_to_swap = (diff_axis + index_increment) % dof
+                if axis_to_swap == diff_axis:
+                    continue
+                swapped_var = np.swapaxes(var, diff_axis, axis_to_swap)
+            swapped_f = np.swapaxes(f, diff_axis, axis_to_swap)
+
+            return np.swapaxes(
+                [self.__partial_differentiate(
+                    _f, _var, axis_to_swap) for _f, _var
+                 in zip(swapped_f, swapped_var)], diff_axis, axis_to_swap)
