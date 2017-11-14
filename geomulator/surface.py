@@ -1,6 +1,6 @@
 import numpy as np
 
-from tensor_field import TensorField
+from .tensor_field import TensorField
 
 
 class Surface(TensorField):

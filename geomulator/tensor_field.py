@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 
-from util import DifferentialLabel as DL
+from .util import DifferentialLabel as DL
 
 
 class TensorField(np.ndarray):
