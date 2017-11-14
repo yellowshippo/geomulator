@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from surface import Surface
+from geomulator.surface import Surface
 
 
 class TestTensorField(unittest.TestCase):

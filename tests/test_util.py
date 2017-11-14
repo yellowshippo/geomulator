@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from util import DifferentialLabel
+from geomulator.util import DifferentialLabel
 
 
 class TestUtil(unittest.TestCase):

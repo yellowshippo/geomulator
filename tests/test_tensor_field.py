@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from tensor_field import TensorField
+from geomulator.tensor_field import TensorField
 
 
 class TestTensorField(unittest.TestCase):
